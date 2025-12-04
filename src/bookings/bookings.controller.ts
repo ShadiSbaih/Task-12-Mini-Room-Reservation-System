@@ -1,28 +1,10 @@
 import { Body, Controller, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiCreatedResponse, ApiOkResponse, ApiProperty } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../security/roles.decorator';
 import { RolesGuard } from '../security/roles.guard';
 import { BookingsService } from './bookings.service';
-import { Type } from 'class-transformer';
-import { IsDate, IsInt } from 'class-validator';
-
-class CreateBookingDto {
-  @ApiProperty({ example: 1 })
-  @Type(() => Number)
-  @IsInt()
-  roomId: number;
-
-  @ApiProperty({ example: '2025-12-01T00:00:00.000Z' })
-  @Type(() => Date)
-  @IsDate()
-  checkIn: Date;
-
-  @ApiProperty({ example: '2025-12-03T00:00:00.000Z' })
-  @Type(() => Date)
-  @IsDate()
-  checkOut: Date;
-}
+import { CreateBookingDto, BookingResponseDto } from './dto';
 
 @ApiTags('bookings')
 @ApiBearerAuth()
@@ -34,7 +16,7 @@ export class BookingsController {
   @Roles('GUEST', 'ADMIN')
   @Post()
   @ApiOperation({ summary: 'Create a booking for a room (Guest/Admin)' })
-  @ApiCreatedResponse({ description: 'Booking created if no overlap' })
+  @ApiCreatedResponse({ description: 'Booking created successfully', type: BookingResponseDto })
   create(@Body() dto: CreateBookingDto, @Request() req: any) {
     return this.bookings.create(req.user.userId, dto);
   }
@@ -42,7 +24,7 @@ export class BookingsController {
   @Roles('GUEST', 'ADMIN')
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel own booking (Guest/Admin)' })
-  @ApiOkResponse({ description: 'Booking cancelled' })
+  @ApiOkResponse({ description: 'Booking cancelled successfully', type: BookingResponseDto })
   cancel(@Param('id') id: string, @Request() req: any) {
     return this.bookings.cancel(Number(id), req.user.userId, req.user.role);
   }
@@ -50,7 +32,7 @@ export class BookingsController {
   @Roles('GUEST')
   @Get('me')
   @ApiOperation({ summary: 'List my bookings (Guest)' })
-  @ApiOkResponse({ description: 'List of bookings' })
+  @ApiOkResponse({ description: 'List of user bookings', type: [BookingResponseDto] })
   myBookings(@Request() req: any) {
     return this.bookings.listForGuest(req.user.userId);
   }
